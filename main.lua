@@ -3086,7 +3086,3 @@ inputConn = UserInputService.InputBegan:Connect(function(input)
     if unloaded then return end
     if input.KeyCode == TOGGLE_KEY then ScreenGui.Enabled = not ScreenGui.Enabled end
 end)
-
-print("[WordHelper V5] Loaded successfully!")
-print("[WordHelper V5] Press Right Control to toggle UI")
-print("[WordHelper V5] Total words loaded: " .. #Words)
