@@ -39,19 +39,6 @@ local function ColorToRGB(c)
     return string.format("%d,%d,%d", math.floor(c.R * 255), math.floor(c.G * 255), math.floor(c.B * 255))
 end
 
--- WORD LIST SOURCES
-local WordListSources = {
-    {
-        name = "Ultimate Merged (mdprana)",
-        url = "https://raw.githubusercontent.com/mdprana/Last-Letter-Script/main/ultimate_merged_english.txt",
-        size = 1000000,
-        description = "Custom merged word list"
-    }
-}
-
-local fileName = "ultimate_merged_english.txt"
-local currentSourceIndex = 1 -- Default to custom ultimate merged
-
 local ConfigFile = "WordHelper_Config.json"
 local Config = {
     CPM = 550,
@@ -79,7 +66,6 @@ local Config = {
     KeyboardLayout = "QWERTY",
     BoostThreshold = 5,
     UseAPI = false,
-    WordListSource = 2
 }
 
 local function SaveConfig()
@@ -169,6 +155,10 @@ logConn = LogService.MessageOut:Connect(function(message, type)
     end
 end)
 
+-- WORD LIST SOURCES
+local url = "https://raw.githubusercontent.com/mdprana/Last-Letter-Script/main/ultimate_merged_english.txt"
+local fileName = "ultimate_merged_english.txt"
+
 -- Temporary Loading UI
 local LoadingGui = Instance.new("ScreenGui")
 LoadingGui.Name = "WordHelperLoading"
@@ -211,83 +201,19 @@ local function UpdateStatus(text, color)
     game:GetService("RunService").RenderStepped:Wait()
 end
 
--- Dictionary API Functions
-local function CheckWordWithAPI(word)
-    local success, result = pcall(function()
-        return request({
-            Url = "https://api.dictionaryapi.dev/api/v2/entries/en/" .. word:lower(),
-            Method = "GET"
-        })
-    end)
-    
-    if success and result and result.StatusCode == 200 then
-        local data = HttpService:JSONDecode(result.Body)
-        if data and #data > 0 then
-            return true, {
-                definition = data[1].meanings[1].definitions[1].definition,
-                phonetic = data[1].phonetic
-            }
-        end
-    end
-    
-    return false, nil
-end
-
-local function GetWordSuggestions(prefix, limit)
-    limit = limit or 20
-    local success, result = pcall(function()
-        return request({
-            Url = "https://api.datamuse.com/sug?s=" .. prefix .. "&max=" .. limit,
-            Method = "GET"
-        })
-    end)
-    
-    if success and result and result.Body then
-        local data = HttpService:JSONDecode(result.Body)
-        local suggestions = {}
-        for _, item in ipairs(data) do
-            table.insert(suggestions, item.word:lower())
-        end
-        return suggestions
-    end
-    
-    return {}
-end
-
--- Startup: Fetch dengan fallback system
+-- Startup: Always fetch fresh word list
 local function FetchWords()
-    local function TrySource(index)
-        if index > #WordListSources then
-            UpdateStatus("All sources failed!", Color3.fromRGB(255, 80, 80))
-            return false
-        end
-        
-        local source = WordListSources[index]
-        UpdateStatus("Fetching: " .. source.name, THEME.Warning)
-        
-        local success, res = pcall(function()
-            return request({Url = source.url, Method = "GET"})
-        end)
-        
-        if success and res and res.Body then
-            writefile(fileName, res.Body)
-            UpdateStatus("Loaded: " .. source.name .. "!", THEME.Success)
-            currentSourceIndex = index
-            Config.WordListSource = index
-            SaveConfig()
-            return true
-        else
-            UpdateStatus("Failed: " .. source.name, Color3.fromRGB(255, 100, 100))
-            task.wait(0.5)
-            return TrySource(index + 1)
-        end
-    end
+    UpdateStatus("Fetching latest word list...", THEME.Warning)
+    local success, res = pcall(function()
+        return request({Url = url, Method = "GET"})
+    end)
     
-    -- Try configured source first
-    if not TrySource(Config.WordListSource or 2) then
-        UpdateStatus("Using cached data...", THEME.Warning)
+    if success and res and res.Body then
+        writefile(fileName, res.Body)
+        UpdateStatus("Fetched successfully!", THEME.Success)
+    else
+        UpdateStatus("Fetch failed! Using cached.", Color3.fromRGB(255, 80, 80))
     end
-    
     task.wait(0.5)
 end
 
@@ -341,6 +267,7 @@ if Config.CustomWords then
     end
 end
 
+-- Clear memory
 SeenWords = nil
 
 local function shuffleTable(t)
@@ -1410,47 +1337,6 @@ ServerBrowserBtn.BackgroundColor3 = THEME.Background
 ServerBrowserBtn.Size = UDim2.new(0, 265, 0, 24)
 ServerBrowserBtn.Position = UDim2.new(0, 15, 0, 265)
 Instance.new("UICorner", ServerBrowserBtn).CornerRadius = UDim.new(0, 4)
-
--- Word List Selector
-local WordListBtn = Instance.new("TextButton", TogglesFrame)
-WordListBtn.Text = "Word List: " .. WordListSources[currentSourceIndex].name
-WordListBtn.Font = Enum.Font.GothamMedium
-WordListBtn.TextSize = 11
-WordListBtn.TextColor3 = Color3.fromRGB(255, 200, 100)
-WordListBtn.BackgroundColor3 = THEME.Background
-WordListBtn.Size = UDim2.new(0, 265, 0, 24)
-WordListBtn.Position = UDim2.new(0, 15, 0, 295)
-Instance.new("UICorner", WordListBtn).CornerRadius = UDim.new(0, 4)
-
-WordListBtn.MouseButton1Click:Connect(function()
-    currentSourceIndex = currentSourceIndex + 1
-    if currentSourceIndex > #WordListSources then
-        currentSourceIndex = 1
-    end
-    
-    WordListBtn.Text = "Loading..."
-    ShowToast("Fetching: " .. WordListSources[currentSourceIndex].name, "warning")
-    
-    task.spawn(function()
-        FetchWords()
-        
-        Words = {}
-        LoadList(fileName)
-        
-        Buckets = {}
-        for _, w in ipairs(Words) do
-            local c = w:sub(1,1) or "#"
-            Buckets[c] = Buckets[c] or {}
-            table.insert(Buckets[c], w)
-        end
-        
-        WordListBtn.Text = "Word List: " .. WordListSources[currentSourceIndex].name
-        ShowToast("Loaded: " .. #Words .. " words!", "success")
-        
-        lastDetected = "---"
-        forceUpdateList = true
-    end)
-end)
 
 local CustomWordsFrame = Instance.new("Frame", ScreenGui)
 CustomWordsFrame.Name = "CustomWordsFrame"
@@ -2598,22 +2484,6 @@ UpdateList = function(detectedText, requiredLetter)
         end
     end
 
-    -- API Fallback
-    if #exacts == 0 and useAPI and searchPrefix ~= "" then
-        local apiSuggestions = GetWordSuggestions(searchPrefix)
-        for _, word in ipairs(apiSuggestions) do
-            if not Blacklist[word] and not UsedWords[word] then
-                table.insert(matches, word)
-                if #matches >= 20 then break end
-            end
-        end
-        
-        if #matches > 0 then
-            StatusText.Text = "Results from API"
-            StatusText.TextColor3 = Color3.fromRGB(100, 200, 255)
-        end
-    end
-
     if #exacts > 0 then
         matches = exacts
     elseif pLen > 0 then
@@ -3220,4 +3090,3 @@ end)
 print("[WordHelper V5] Loaded successfully!")
 print("[WordHelper V5] Press Right Control to toggle UI")
 print("[WordHelper V5] Total words loaded: " .. #Words)
-
