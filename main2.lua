@@ -143,7 +143,7 @@ logConn = LogService.MessageOut:Connect(function(message, type)
     end
 end)
 
-local url = "https://raw.githubusercontent.com/mdprana/Last-Letter-Script/main/ultimate_merged_english.txt"
+local url = "https://raw.githubusercontent.com/mdprana/Last-Letter-Script/main/ultimate_merged_english2.txt"
 local fileName = "ultimate_merged_english.txt"
 
 -- Temporary Loading UI
