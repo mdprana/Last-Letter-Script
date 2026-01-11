@@ -1452,7 +1452,7 @@ local function FetchServers()
                             ShowToast("Teleporting...", "success")
                             
                             if queue_on_teleport then
-                                queue_on_teleport('loadstring(game:HttpGet("https://raw.githubusercontent.com/mdprana/LastLetterScript/main/main2.lua"))()')
+                                queue_on_teleport('loadstring(game:HttpGet("https://raw.githubusercontent.com/mdprana/Las-tLetter-Script/main/main2.lua"))()')
                             end
 
                             task.spawn(function()
