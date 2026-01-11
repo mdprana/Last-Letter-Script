@@ -156,8 +156,8 @@ logConn = LogService.MessageOut:Connect(function(message, type)
 end)
 
 -- WORD LIST SOURCES
-local url = "https://raw.githubusercontent.com/mdprana/Last-Letter-Script/main/ultimate_merged_english2.txt"
-local fileName = "ultimate_merged_english2.txt"
+local url = "https://raw.githubusercontent.com/mdprana/Last-Letter-Script/main/ultimate_merged_english.txt"
+local fileName = "ultimate_merged_english.txt"
 
 -- Temporary Loading UI
 local LoadingGui = Instance.new("ScreenGui")
@@ -1665,7 +1665,7 @@ local function FetchServers()
                             ShowToast("Teleporting...", "success")
                             
                             if queue_on_teleport then
-                                queue_on_teleport('loadstring(game:HttpGet("https://raw.githubusercontent.com/mdprana/Last-Letter-Script/main/main.lua"))()')
+                                queue_on_teleport('loadstring(game:HttpGet("https://raw.githubusercontent.com/mdprana/LastLetterScript/main/main.lua"))()')
                             end
 
                             task.spawn(function()
@@ -3086,3 +3086,7 @@ inputConn = UserInputService.InputBegan:Connect(function(input)
     if unloaded then return end
     if input.KeyCode == TOGGLE_KEY then ScreenGui.Enabled = not ScreenGui.Enabled end
 end)
+
+print("[WordHelper V5] Loaded successfully!")
+print("[WordHelper V5] Press Right Control to toggle UI")
+print("[WordHelper V5] Total words loaded: " .. #Words)
